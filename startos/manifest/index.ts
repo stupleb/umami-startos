@@ -13,7 +13,7 @@ export const manifest = setupManifest({
   volumes: ['startos', 'db'],
   images: {
     umami: {
-      source: { dockerTag: 'ghcr.io/umami-software/umami:3.4.0' },
+      source: { dockerTag: 'ghcr.io/umami-software/umami:3.4.1' },
       arch: ['x86_64', 'aarch64'],
     },
     postgres: {
