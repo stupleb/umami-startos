@@ -51,7 +51,8 @@ To keep your own visits out of the statistics, open your site, open the browser'
 console, and run `localStorage.setItem('umami.disabled', 1)`. It applies to that site in that
 browser only.
 
-### Links and pixels
+### Replays, links and pixels
 
-Umami's links and pixels work through the Tracker too. The URLs Umami shows for them use the
-dashboard's address; swap in your Tracker's public domain before you share them.
+Session replays, heatmaps, links and pixels work through the Tracker too. The replay snippet and
+the URLs Umami shows for links and pixels use the dashboard's address; swap in your Tracker's
+public domain before you use them.

@@ -106,10 +106,10 @@ None.
 
 Two interfaces on two separate hosts, so a domain added to one never reaches the other.
 
-| Interface | Id        | Type  | Port | Serves                                                                                                           |
-| --------- | --------- | ----- | ---- | ---------------------------------------------------------------------------------------------------------------- |
-| Dashboard | `ui`      | `ui`  | 3000 | all of Umami: the dashboard, login, API, share pages                                                             |
-| Tracker   | `tracker` | `api` | 3001 | `/script.js`, `/recorder.js`, `/api/send`, `/api/record`, `/p/…` (pixels), `/q/…` (links); 404 for anything else |
+| Interface | Id        | Type  | Port | Serves                                                                                                                                                            |
+| --------- | --------- | ----- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard | `ui`      | `ui`  | 3000 | all of Umami: the dashboard, login, API, share pages                                                                                                              |
+| Tracker   | `tracker` | `api` | 3001 | `/script.js`, `/api/send`, `/recorder.js`, `/api/record`, `/api/websites/<id>/recorder` (replay settings), `/p/…` (pixels), `/q/…` (links); 404 for anything else |
 
 Visitors' browsers load `/script.js` from the Tracker and post to `/api/send` on the same host,
 so the Tracker needs an address those browsers can reach with a publicly trusted certificate. In
@@ -175,7 +175,8 @@ Nothing is excluded, and a restored instance needs no further steps.
 
 1. The tracking code Umami shows under a website's **Tracking code** uses the address the
    dashboard was opened on. Replace that address with the Tracker interface's public address
-   before pasting it into a site. The same applies to the URLs Umami shows for links and pixels.
+   before pasting it into a site. The same applies to the session replay snippet and to the URLs
+   Umami shows for links and pixels.
 2. Share pages (`/share/…`) are served only by the Dashboard interface; the Tracker does not
    forward them.
 3. Telemetry, the update notice and referrer favicons are off and cannot be turned on.
