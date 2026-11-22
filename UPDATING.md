@@ -1,8 +1,9 @@
 # Updating the upstream version
 
 Upstream is the `ghcr.io/umami-software/umami` image, tagged with the bare release version
-(`3.4.0`, no `v`). The package pins that tag, plus a PostgreSQL and an nginx image that only move
-when they need to.
+(`3.4.0`, no `v`). The package pins that tag, plus a PostgreSQL and an nginx image. Bring both
+to their newest stable release on every release or revision bump: PostgreSQL within its major,
+nginx on its stable (even-numbered) line.
 
 ## Determining the upstream version
 
@@ -29,6 +30,6 @@ docker manifest inspect ghcr.io/umami-software/umami:<version> | jq -r '.manifes
 
 ## PostgreSQL
 
-`postgres` is pinned to a major-version Alpine tag. A patch bump within the same major is safe.
+`postgres` is pinned to a minor-version Alpine tag. A minor bump within the same major is safe.
 A new major cannot read the old data directory, so moving major versions needs a dump-and-restore
 migration and a new `pgdataSubpath` in `startos/utils.ts`; never change the major in place.

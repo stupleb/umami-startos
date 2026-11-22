@@ -5,11 +5,13 @@ import { sdk } from './sdk'
 
 export const uiPort = 3000
 export const trackerPort = 3001
+export const internalTrackerPort = 3002
 
 export const uiHostId = 'main'
 export const uiInterfaceId = 'ui'
 export const trackerHostId = 'tracker'
 export const trackerInterfaceId = 'tracker'
+export const internalTrackerHostId = 'internal-tracker'
 
 export const postgresPath = '/var/lib/postgresql'
 // The postgres 18 image's default PGDATA, relative to postgresPath.

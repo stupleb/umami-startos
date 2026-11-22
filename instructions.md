@@ -51,6 +51,12 @@ To keep your own visits out of the statistics, open your site, open the browser'
 console, and run `localStorage.setItem('umami.disabled', 1)`. It applies to that site in that
 browser only.
 
+### Other services on this server
+
+Services on this server, such as a website you host here, can send visits to Umami directly, so
+the Tracker doesn't need a public domain for them. Each service sets that up on its side; there's
+nothing to do in Umami. Any service on this server can send visits this way.
+
 ### Replays, links and pixels
 
 Session replays, heatmaps, links and pixels work through the Tracker too. The replay snippet and

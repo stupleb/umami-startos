@@ -17,11 +17,11 @@ export const manifest = setupManifest({
       arch: ['x86_64', 'aarch64'],
     },
     postgres: {
-      source: { dockerTag: 'postgres:18.6-alpine' },
+      source: { dockerTag: 'postgres:18.7-alpine' },
       arch: ['x86_64', 'aarch64'],
     },
     nginx: {
-      source: { dockerTag: 'nginx:1.30.6-alpine' },
+      source: { dockerTag: 'nginx:1.30.7-alpine' },
       arch: ['x86_64', 'aarch64'],
     },
   },

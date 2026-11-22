@@ -36,11 +36,11 @@ dashboard, and a tracker-only proxy that is the one part visitors' browsers need
 
 Three upstream images, unmodified, for x86_64 and aarch64.
 
-| Subcontainer | Image                          | Runs                                                                                                  |
-| ------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `postgres`   | `postgres` (Alpine)            | PostgreSQL, listening on `127.0.0.1` only                                                             |
-| `umami`      | `ghcr.io/umami-software/umami` | the `migrate` oneshot (`scripts/check-db.js`), then the image's own entrypoint, serving port 3000     |
-| `nginx`      | `nginx` (Alpine)               | a reverse proxy on port 3001 that forwards only the tracker paths to Umami, using `assets/nginx.conf` |
+| Subcontainer | Image                          | Runs                                                                                                            |
+| ------------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `postgres`   | `postgres` (Alpine)            | PostgreSQL, listening on `127.0.0.1` only                                                                       |
+| `umami`      | `ghcr.io/umami-software/umami` | the `migrate` oneshot (`scripts/check-db.js`), then the image's own entrypoint, serving port 3000               |
+| `nginx`      | `nginx` (Alpine)               | a reverse proxy on ports 3001 and 3002 that forwards only the tracker paths to Umami, using `assets/nginx.conf` |
 
 Start order: `pg-recover` (removes a stale `postmaster.pid`) → `postgres` → `migrate` (applies
 Umami's database migrations) → `admin-password` (applies a pending admin password) → `umami` →
@@ -92,7 +92,8 @@ Umami is configured entirely by environment variables, set on every start and no
 
 `CLIENT_IP_HEADER` makes Umami read the visitor's IP only from `X-Forwarded-For`, which the
 StartOS proxy overwrites with the real source address. Left unset, Umami would trust headers such
-as `True-Client-IP` and `X-Real-IP` that any visitor can forge. `PRIVATE_MODE` turns off
+as `True-Client-IP` and `X-Real-IP` that any visitor can forge. On the internal tracker port no
+proxy sits in front, so the calling service supplies the header. `PRIVATE_MODE` turns off
 telemetry, the update check and the referrer favicons Umami would otherwise load from DuckDuckGo
 in the dashboard viewer's browser.
 
@@ -116,6 +117,17 @@ so the Tracker needs an address those browsers can reach with a publicly trusted
 practice that is a public domain. The Dashboard needs no public address.
 
 The StartOS proxy adds `X-Forwarded-For` on both interfaces; nginx passes it through unchanged.
+
+### Internal tracker port
+
+Port 3002, on host `internal-tracker`, serves the same paths as the Tracker. It is bound without
+an interface, so only other services on this server reach it, at its bridge address; it is never on
+the LAN or a domain. No StartOS proxy sits in front of it, so Umami takes the visitor's address
+from whatever `X-Forwarded-For` the calling service sends: a dependent must set that header to its
+visitor's address. Any service on the server can send visits with any address on this port.
+
+A dependent imports `internalTrackerHostId` and `internalTrackerPort` from `startos/utils.ts` and
+resolves the address with `sdk.host.getBridgeAddress`.
 
 ## Installation and First-Run Flow
 
@@ -214,6 +226,8 @@ dependencies: none
 interfaces:
   ui: { type: ui, port: 3000 }
   tracker: { type: api, port: 3001 }
+bridge_only_bindings:
+  internal-tracker: { port: 3002 }
 actions:
   - set-admin-password
 tasks:

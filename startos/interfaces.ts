@@ -1,6 +1,8 @@
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import {
+  internalTrackerHostId,
+  internalTrackerPort,
   trackerHostId,
   trackerInterfaceId,
   trackerPort,
@@ -48,6 +50,17 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
     path: '',
     query: {},
   })
+
+  await sdk.MultiHost.of(effects, internalTrackerHostId).bindPort(
+    internalTrackerPort,
+    {
+      protocol: null,
+      preferredExternalPort: internalTrackerPort,
+      addSsl: null,
+      secure: { ssl: false },
+      proxy: null,
+    },
+  )
 
   return [await uiOrigin.export([ui]), await trackerOrigin.export([tracker])]
 })
