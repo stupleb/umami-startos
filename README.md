@@ -51,10 +51,10 @@ Umami's database migrations) → `admin-password` (applies a pending admin passw
 
 Two volumes. Umami itself writes nothing outside its database.
 
-| Volume    | Mounted at                          | Holds                                                                           |
-| --------- | ----------------------------------- | ------------------------------------------------------------------------------- |
-| `startos` | not mounted                         | `store.json`: the generated secrets and the admin password the package set      |
-| `db`      | `/var/lib/postgresql` in `postgres` | the PostgreSQL cluster (data directory `18/docker`): every website, user, event |
+| Volume    | Mounted at                          | Holds                                                                      |
+| --------- | ----------------------------------- | -------------------------------------------------------------------------- |
+| `startos` | not mounted                         | `store.json`: the generated secrets and the admin password the package set |
+| `db`      | `/var/lib/postgresql` in `postgres` | the PostgreSQL cluster: every website, user, event                         |
 
 The GeoLite2 City database that turns visitor IPs into countries and cities ships inside the
 Umami image, so it is as current as the image.
@@ -64,14 +64,14 @@ Umami image, so it is as current as the image.
 One file model, `store.json` on the `startos` volume, which holds StartOS-side state rather than
 Umami configuration.
 
-| Key                      | Seeded                               | Rewritten by                                                         |
-| ------------------------ | ------------------------------------ | -------------------------------------------------------------------- |
-| `postgresPassword`       | at install                           | never                                                                |
-| `appSecret`              | at install                           | never                                                                |
-| `twoFactorEncryptionKey` | at install (64 hex characters)       | never                                                                |
-| `adminPassword`          | by **Set Admin Password**            | **Set Admin Password**                                               |
-| `adminPasswordPending`   | by **Set Admin Password**            | the `admin-password` oneshot, once the password reaches the database |
-| `adminUsername`          | when a password reaches the database | the same                                                             |
+| Key                      | Seeded                                                                    | Rewritten by                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `postgresPassword`       | at install                                                                | never                                                                                           |
+| `appSecret`              | at install                                                                | never                                                                                           |
+| `twoFactorEncryptionKey` | at install (64 hex characters)                                            | never                                                                                           |
+| `adminPassword`          | by **Set Admin Password**                                                 | **Set Admin Password**                                                                          |
+| `adminPasswordPending`   | by **Set Admin Password**                                                 | **Set Admin Password**, and the `admin-password` oneshot once the password reaches the database |
+| `adminUsername`          | by **Set Admin Password** (`admin` until a password reaches the database) | **Set Admin Password** and the `admin-password` oneshot, from the account's current name        |
 
 `appSecret` signs Umami's logins and salts its visitor hashing; `twoFactorEncryptionKey`
 encrypts two-factor secrets in the database. Changing either by hand signs everyone out, splits
@@ -166,10 +166,13 @@ password.
 
 ## Health Checks
 
-| Check     | Probes                                                 | Failure means                                                                                      |
-| --------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| Dashboard | `GET /api/heartbeat` on port 3000, retried three times | Umami is not serving. Its log shows why; a failed `migrate` oneshot keeps it from starting at all. |
-| Tracker   | nginx listening on port 3001                           | nginx did not start. It only starts once the Dashboard check passes.                               |
+Two checks are shown in the UI, one per daemon a user reaches. Each reports Starting until its
+grace period ends.
+
+| Check     | Probes                                                 | Grace period | Failure means                                                                                      |
+| --------- | ------------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------- |
+| Dashboard | `GET /api/heartbeat` on port 3000, retried three times | 60 s         | Umami is not serving. Its log shows why; a failed `migrate` oneshot keeps it from starting at all. |
+| Tracker   | nginx listening on port 3001                           | 10 s         | nginx did not start. It only starts once the Dashboard check passes.                               |
 
 PostgreSQL has an internal readiness check (`pg_isready`, also retried three times) that gates
 the rest and is not shown in the UI. Both retries exist because one failed poll stops every
@@ -184,6 +187,8 @@ password and its two-factor encryption key, all matching the restored database.
 Nothing is excluded, and a restored instance needs no further steps.
 
 ## Limitations and Differences
+
+What works differently from a standard Umami install, or isn't available.
 
 1. The tracking code Umami shows under a website's **Tracking code** uses the address the
    dashboard was opened on. Replace that address with the Tracker interface's public address
@@ -225,9 +230,7 @@ startos_managed_env_vars:
 dependencies: none
 interfaces:
   ui: { type: ui, port: 3000 }
-  tracker: { type: api, port: 3001 }
-bridge_only_bindings:
-  internal-tracker: { port: 3002 }
+  tracker: { type: api, port: 3001 } # 3002 on host internal-tracker serves the same paths, bridge-only, no interface
 actions:
   - set-admin-password
 tasks:

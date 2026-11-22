@@ -57,7 +57,7 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
       protocol: null,
       preferredExternalPort: internalTrackerPort,
       addSsl: null,
-      secure: { ssl: false },
+      secure: null,
       proxy: null,
     },
   )
