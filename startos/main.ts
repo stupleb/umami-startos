@@ -36,16 +36,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const { postgresPassword, appSecret, twoFactorEncryptionKey } = store
 
   // Read once: Set Admin Password applies a password itself while the database is up.
-  const admin = await storeJson
-    .read((s) => ({
-      password: s.adminPassword,
-      pending: s.adminPasswordPending,
-    }))
-    .once()
-  if (!admin?.password) {
+  if (!(await storeJson.read((s) => s.adminPassword).once())) {
     throw new Error(i18n('No admin password has been set'))
   }
-  const { password: adminPassword, pending } = admin
 
   const env = umamiEnv({ postgresPassword, appSecret, twoFactorEncryptionKey })
 
@@ -114,11 +107,17 @@ export const main = sdk.setupMain(async ({ effects }) => {
       subcontainer: postgresSub,
       exec: {
         fn: async () => {
-          if (!pending) return null
+          const admin = await storeJson
+            .read((s) => ({
+              password: s.adminPassword,
+              pending: s.adminPasswordPending,
+            }))
+            .once()
+          if (!admin?.pending || !admin.password) return null
           const username = await writeAdminPassword(
             postgresSub,
             postgresPassword,
-            adminPassword,
+            admin.password,
           )
           // Stays pending rather than failing the start; the action reports it while Umami runs.
           if (!username) {
@@ -127,7 +126,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
           }
           if (
             (await storeJson.read((s) => s.adminPassword).once()) ===
-            adminPassword
+            admin.password
           ) {
             await storeJson.merge(effects, {
               adminUsername: username,
@@ -163,7 +162,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
                 message: i18n('The dashboard is ready'),
               }
             : {
-                result: 'starting',
+                result: 'failure',
                 message: i18n('The dashboard is not ready'),
               },
       },

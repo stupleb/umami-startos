@@ -1,10 +1,13 @@
 # Updating the upstream version
 
-Upstream is the `ghcr.io/umami-software/umami` image, tagged with the bare release version
-(`3.4.0`, no `v`). The package pins that tag, plus a PostgreSQL and an nginx image that only move
-when they need to.
+The package pins three images in `startos/manifest/index.ts`: Umami, which is the upstream, and a
+PostgreSQL and an nginx image beside it.
 
 ## Determining the upstream version
+
+### Umami
+
+`ghcr.io/umami-software/umami`, tagged with the bare release version (`3.5.0`, no `v`):
 
 ```bash
 gh release view -R umami-software/umami --json tagName -q .tagName
@@ -17,18 +20,41 @@ architectures before bumping:
 docker manifest inspect ghcr.io/umami-software/umami:<version> | jq -r '.manifests[].platform | "\(.os)/\(.architecture)"'
 ```
 
+### PostgreSQL
+
+`postgres:<major>.<minor>-alpine`, following the newest minor of the pinned major (`REL_18_7` is
+`18.7-alpine`):
+
+```bash
+gh api 'repos/postgres/postgres/git/matching-refs/tags/REL_18_' --jq '.[].ref | ltrimstr("refs/tags/")' | grep -E '^REL_18_[0-9]+$' | sort -V | tail -1
+```
+
+### nginx
+
+`nginx:<version>-alpine`, following the stable line, whose minor version is even
+(`release-1.30.7` is `1.30.7-alpine`):
+
+```bash
+gh release list -R nginx/nginx --limit 10 --json tagName -q '.[].tagName' | grep -E '^release-1\.[0-9]*[02468]\.[0-9]+$' | head -1
+```
+
 ## Applying the bump
 
-1. Set `images.umami.source.dockerTag` in `startos/manifest/index.ts` to the new tag.
-2. Set `version` in `startos/versions/current.ts` to `<version>:0`, and replace its release
-   notes.
-3. Read the release notes for anything that touches the database, the tracker paths, the seeded
+### Umami
+
+1. Set `images.umami.source.dockerTag` to the new tag.
+2. Read the release notes for anything that touches the database, the tracker paths, the seeded
    admin account or the environment variables the package sets (`startos/utils.ts`,
    `umamiEnv`). Umami migrates its own database at start, through the `migrate` oneshot.
-4. If upstream adds a path the tracker script calls, add it to `assets/nginx.conf`.
+3. If upstream adds a path the tracker script calls, add it to `assets/nginx.conf`.
 
-## PostgreSQL
+### PostgreSQL
 
-`postgres` is pinned to a major-version Alpine tag. A patch bump within the same major is safe.
-A new major cannot read the old data directory, so moving major versions needs a dump-and-restore
-migration and a new `pgdataSubpath` in `startos/utils.ts`; never change the major in place.
+Set `images.postgres.source.dockerTag` to the new tag. A minor bump within the same major is
+safe. A new major cannot read the old data directory, so moving major versions needs a
+dump-and-restore migration and a new `pgdataSubpath` in `startos/utils.ts`; never change the
+major in place.
+
+### nginx
+
+Set `images.nginx.source.dockerTag` to the new tag.

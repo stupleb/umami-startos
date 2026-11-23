@@ -5,11 +5,13 @@ import { sdk } from './sdk'
 
 export const uiPort = 3000
 export const trackerPort = 3001
+export const internalTrackerPort = 3002
 
 export const uiHostId = 'main'
 export const uiInterfaceId = 'ui'
 export const trackerHostId = 'tracker'
 export const trackerInterfaceId = 'tracker'
+export const internalTrackerHostId = 'internal-tracker'
 
 export const postgresPath = '/var/lib/postgresql'
 // The postgres 18 image's default PGDATA, relative to postgresPath.
@@ -42,7 +44,7 @@ export const umamiEnv = (secrets: {
   TWO_FACTOR_ENCRYPTION_KEY: secrets.twoFactorEncryptionKey,
   HOSTNAME: '0.0.0.0',
   PORT: String(uiPort),
-  // StartOS replaces any client-sent X-Forwarded-For; the other headers Umami reads are spoofable.
+  // Set by StartOS's proxy, or by the dependent on the internal port; Umami's other IP headers are spoofable.
   CLIENT_IP_HEADER: 'x-forwarded-for',
   DISABLE_TELEMETRY: '1',
   DISABLE_UPDATES: '1',
